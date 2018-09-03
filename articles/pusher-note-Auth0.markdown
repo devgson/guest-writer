@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Real time collaborative note editor"
-description: "A web application that allows you work on a document in real-time with your colleagues from anywhere in the world"
+description: "A web application that enables you work on a document in real-time with your colleagues from anywhere in the world"
 date: "2018-08-22 08:30"
 author:
   name: "Godson"
@@ -20,13 +20,13 @@ Pusher is a hosted service that makes it relatively easy to add real-time functi
 In this article, we'll be using a library provided by Pusher called TextSync to build our application. Basically, TextSync provides the functionality that enables us work on a document in real-time with others, it will also handle authorization and a few other things we'll see as we build our application.
 
 ## Scaffolding our Project
-First, let's create a folder for our project. Run the following command in your terminal :
+First, let's create a directory for our application. Run the following command in your terminal :
 
 ```bashmkdir
-$ mkdir pusher-note-Auth0
+$ mkdir pusher-note-auth0
 ```
 
-Our application isn't complex, so our folder structure will be fairly simple :
+Our application isn't complex, so our directory structure will be fairly simple :
 
 ```
 -- assets
@@ -55,10 +55,10 @@ $ npm init
 Now with that done, let's install the necessary packages that'll help us build certain parts of our application. Run the command below in your terminal :
 
 ```bash
-$ npm install body-parser express express-session passport passport-auth0 pug textsync-server-node
+$ npm install body-parser dotenv express express-session passport passport-auth0 pug textsync-server-node
 ```
 
-A run down of what some of the packages will help us achieve. We'll use the `passport` and `passport-auth0` packages to implement user authentication with Auth0, `textsync-server-node` to handle the Pusher TextSync authorization and then `pug` for our server-side templates. Don't worry if all these don't make much sense now, as we go on it would become much clearer.
+A run down of what some of the packages will help us achieve. We'll use the `passport` and `passport-auth0` packages to implement user authentication with Auth0, `textsync-server-node` to handle the Pusher TextSync authorization, `dotenv` to load environmental variables from the `variables.env` file into `process.env` and finally we'll use `pug` for our server-side templates. Don't worry if all these don't make much sense now, as we go on it would become much clearer.
 
 ## Setting up a Pusher TextSync Account
 Previously, i stated we'll be using a library called TextSync to build our application, so let's go ahead and create an account to enable us make use of TextSync. Go to this [link](https://pusher.com/textsync) and sign up.
@@ -77,16 +77,16 @@ we won't be exploring in this article, more information about these features can
 ```html
 views/layout.pug
 
-  doctype html
-  html(lang="en")
-    head
-      meta(charset="UTF-8")
-      meta(name="viewport" content="width=device-width, initial-scale=1.0")
-      meta(http-equiv="X-UA-Compatible" content="ie=edge")
-      link(rel="stylesheet" href="/css/main.css")
-      title Real Time Editor
-    body.main
-      block content
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    meta(http-equiv="X-UA-Compatible" content="ie=edge")
+    link(rel="stylesheet" href="/css/main.css")
+    title Real Time Editor
+  body.main
+    block content
 ```
 
 ### Creating Unique URL's
@@ -94,19 +94,19 @@ views/layout.pug
 ```html
 views/index.pug
 
-  extends layout
+extends layout
 
-  block content
-    nav.login_nav
-      button.login_button= user.displayName
-    form(action="/note" method="POST")
-      input(type="text" name="title" placeholder="TITLE OF NEW NOTE")
-      input(type="hidden" name="slug")
-      button(class="create_note") CREATE
-    
-    script.
-      var slug = Math.random().toString(36).slice(2);
-      document.querySelector('input[name="slug"]').value = slug}
+block content
+  nav.login_nav
+    button.login_button= user.displayName
+  form(action="/note" method="POST")
+    input(type="text" name="title" placeholder="TITLE OF NEW NOTE")
+    input(type="hidden" name="slug")
+    button(class="create_note") CREATE
+  
+  script.
+    var slug = Math.random().toString(36).slice(2);
+    document.querySelector('input[name="slug"]').value = slug
 ```
 
 The file above contains a form which will be used to create a new document and an editing session. Importantly, it contains a variable `slug` which holds a random, unique alphanumeric string. When the form is submitted, the `slug` will be sent over to the server-side, and used to create a unique link/URL, other users will be able to join the editing session through that link only. This may not be clear now but later on we'll see exactly how this is done.
@@ -136,105 +136,105 @@ Lastly, let's create a file `main.css` which will contain all our styles.
 ```css
 assets/css/main.css
   
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-    font-weight: 300;
-    font-size: .95rem
-  }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  font-weight: 300;
+  font-size: .95rem
+}
 
-  h3 {
-    font-size: 1.5rem;
-    color:white;
-    text-align: center;
-    margin-bottom: 3px;
-  }
+h3 {
+  font-size: 1.5rem;
+  color:white;
+  text-align: center;
+  margin-bottom: 3px;
+}
 
-  nav {
-    height:8vh;
-    flex-basis:100%;
-    background: linear-gradient(325deg, rgb(39, 107, 130) 0px, rgb(49, 84, 129) 100%);
-  }
+nav {
+  height:8vh;
+  flex-basis:100%;
+  background: linear-gradient(325deg, rgb(39, 107, 130) 0px, rgb(49, 84, 129) 100%);
+}
 
-  button {
-    cursor: pointer;
-    border-radius:5px;
-    color: white;
-  }
+button {
+  cursor: pointer;
+  border-radius:5px;
+  color: white;
+}
 
-  form {
-    display:flex;
-    margin:20px;
-    padding:20px;
-    justify-content: center;
-    flex-basis:100%;
-  }
+form {
+  display:flex;
+  margin:20px;
+  padding:20px;
+  justify-content: center;
+  flex-basis:100%;
+}
 
-  form input {
-    width: 50%;
-    border-width: 0 0 1px 0;
-    padding: 10px;
-    border-color: rgb(39, 107, 130);
-    margin-right:20px;
-  }
+form input {
+  width: 50%;
+  border-width: 0 0 1px 0;
+  padding: 10px;
+  border-color: rgb(39, 107, 130);
+  margin-right:20px;
+}
 
-  .main {
-    display:flex;
-    flex-wrap:wrap;
-  }
+.main {
+  display:flex;
+  flex-wrap:wrap;
+}
 
-  .sidebar {
-    display:flex;
-    flex-direction: column;
-    padding:10px;
-    flex-basis:17%;
-    height: 100vh;
-    align-content: center;
-    background: linear-gradient(325deg, rgb(39, 107, 130) 0px, rgb(49, 84, 129) 100%);
-  }
+.sidebar {
+  display:flex;
+  flex-direction: column;
+  padding:10px;
+  flex-basis:17%;
+  height: 100vh;
+  align-content: center;
+  background: linear-gradient(325deg, rgb(39, 107, 130) 0px, rgb(49, 84, 129) 100%);
+}
 
-  .active_users li {
-    list-style-type: none;
-    background: white;
-    border-radius: 5px;
-    padding: 10px;
-    margin: 10px;
-  }
+.active_users li {
+  list-style-type: none;
+  background: white;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px;
+}
 
-  .main_content {
-    padding: 30px;
-    flex-basis: 83%;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
+.main_content {
+  padding: 30px;
+  flex-basis: 83%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
 
-  #text_editor {
-    margin: 10px 0 40px 0;
-    height: 80vh;
-    flex-basis: 100%;
-  }
+#text_editor {
+  margin: 10px 0 40px 0;
+  height: 80vh;
+  flex-basis: 100%;
+}
 
-  .login_nav {
-    display:flex;
-    justify-content:center;
-  }
+.login_nav {
+  display:flex;
+  justify-content:center;
+}
 
-  .login_button {
-    width: 6rem;
-    height:2rem;
-    border: 1px;
-    background: red;
-    align-self: center;
-  }
+.login_button {
+  width: 6rem;
+  height:2rem;
+  border: 1px;
+  background: red;
+  align-self: center;
+}
 
-  .create_note {
-    width: 6rem;
-    border: 1px solid white;
-    background: linear-gradient(325deg, rgb(39, 107, 130) 0px, rgb(49, 84, 129) 100%);
-  }
+.create_note {
+  width: 6rem;
+  border: 1px solid white;
+  background: linear-gradient(325deg, rgb(39, 107, 130) 0px, rgb(49, 84, 129) 100%);
+}
 
 ```
 
@@ -245,37 +245,37 @@ We'll go through the code in detail right after.
 ```js
 assets/js/app.js
 
-  const textSyncInstance = new TextSync({
-    instanceLocator: "YOUR PUSHER INSTANCE_LOCATOR"
-  });
+const textSyncInstance = new TextSync({
+  instanceLocator: "YOUR PUSHER INSTANCE_LOCATOR"
+});
 
-  //Creates an instance of the TextSync editor
-  const editor = textSyncInstance.createEditor({
-    docId: document.URL.slice(document.URL.lastIndexOf("/") + 1),
-    element: "#text_editor",
-    authEndpoint: "http://localhost:3000/textsync/tokens",
-    userName: user,
-    cursorLabelsAlwaysOn: true,
+//Creates an instance of the TextSync editor
+const editor = textSyncInstance.createEditor({
+  docId: document.URL.slice(document.URL.lastIndexOf("/") + 1),
+  element: "#text_editor",
+  authEndpoint: "http://localhost:3000/textsync/tokens",
+  userName: user,
+  cursorLabelsAlwaysOn: true,
 
-    onCollaboratorsJoined: users => {
-      const activeUsers = document.querySelector(".active_users ul");
-      users.forEach(value => {
-        activeUsers.insertAdjacentHTML(
-          "beforeend",
-          `<li id='${value.siteId}'>${value.name}</li>`
-        );
+  onCollaboratorsJoined: users => {
+    const activeUsers = document.querySelector(".active_users ul");
+    users.forEach(value => {
+      activeUsers.insertAdjacentHTML(
+        "beforeend",
+        `<li id='${value.siteId}'>${value.name}</li>`
+      );
+    });
+  },
+
+  onCollaboratorsLeft: users => {
+    const activeUsers = document.querySelectorAll(".active_users ul li");
+    users.forEach(value => {
+      activeUsers.forEach(element => {
+        if (element.id === value.siteId) element.remove();
       });
-    },
-
-    onCollaboratorsLeft: users => {
-      const activeUsers = document.querySelectorAll(".active_users ul li");
-      users.forEach(value => {
-        activeUsers.forEach(element => {
-          if (element.id === value.siteId) element.remove();
-        });
-      });
-    }
-  });
+    });
+  }
+});
 ```
 
 In the code above, replace the `instanceLocator` property with the one gotten after creating the TextSync instance. We'll use that to connect and interact with the TextSync instance we created previously. So, the next step is to create the TextSync editor, a few Configuration arguments are required to set this up. Specifically, the TextSync editor requires 3 arguments :
@@ -304,8 +304,8 @@ Let's create a file `variables.env` to hold our environmental variables. Copy bo
 ```js
 variables.env
 
-  INSTANCE_LOCATOR=YOUR TEXTSYNC INSTANCE_LOCATOR
-  KEY=YOUR TEXTSYNC SECRET_KEY
+INSTANCE_LOCATOR={YOUR TEXTSYNC INSTANCE_LOCATOR}
+KEY={YOUR TEXTSYNC SECRET_KEY}
 ```
 
 Create another file `server.js`, this will contain all our server-side code. The file will be a bit long, so for easier comprehension we'll break it down and explain it bit by bit. First let's import the packages we previously installed and also add some basic configuration.
@@ -313,31 +313,42 @@ Create another file `server.js`, this will contain all our server-side code. The
 ```js
 server.js
 
-  const path = require('path');
+const path = require('path');
 
-  const bodyParser = require('body-parser');
-  const express = require('express');
-  const session = require('express-session');
-  const passport = require('passport');
-  const Auth0Strategy = require('passport-auth0');
-  const TextSync = require('textsync-server-node');
+const bodyParser = require('body-parser');
+const express = require('express');
+const session = require('express-session');
+const passport = require('passport');
+const Auth0Strategy = require('passport-auth0');
+const TextSync = require('textsync-server-node');
 
-  const app = express();
-  app.set('view engine', 'pug');
+//Load the enviromental variables into process.env
+require("dotenv").config({ path: "variables.env" });
 
-  app.use(express.static(path.join(__dirname, 'assets')));
-  app.use(bodyParser.urlencoded({extended: false}));
-  app.use(bodyParser.json());
+const app = express();
+app.set('view engine', 'pug');
 
-  //We'll make use of sessions to keep track of logged in Users
-  app.use(session({
-    secret: "--ENTER CUSTOM SESSION SECRET--",
-  }));
+//Allow access from a different origin
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
+app.use(express.static(path.join(__dirname, 'assets')));
+app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json());
 
-  const textSync = new TextSync({
-    instanceLocator: process.env.INSTANCE_LOCATOR,
-    key: process.env.KEY
-  });
+//We'll make use of sessions to keep track of logged in Users
+app.use(session({
+  secret: "--ENTER CUSTOM SESSION SECRET--",
+  resave: false,
+  saveUninitialized: false
+}));
+
+const textSync = new TextSync({
+  instanceLocator: process.env.INSTANCE_LOCATOR,
+  key: process.env.KEY
+});
 
   ...
 ```
@@ -352,22 +363,22 @@ server.js
   
   ...
 
-  function loggedIn(req, res, next) {
-    req.session.user ? next() : res.redirect("/login");
-  }
+function loggedIn(req, res, next) {
+  req.session.user ? next() : res.redirect("/login");
+}
 
-  app.get('/', loggedIn, (req, res) => {
-    res.render('index', {user: req.session.user})
-  });
+app.get('/', loggedIn, (req, res) => {
+  res.render('index', {user: req.session.user})
+});
 
-  app.post('/note', loggedIn, (req, res) => {
-    const slug = req.body.slug;
-    res.redirect(`/note/${slug}`);
-  });
+app.post('/note', loggedIn, (req, res) => {
+  const slug = req.body.slug;
+  res.redirect(`/note/${slug}`);
+});
 
-  app.get('/note/:slug', loggedIn, (req, res) => {
-    res.render('editor', {user: req.session.user})
-  });
+app.get('/note/:slug', loggedIn, (req, res) => {
+  res.render('editor', {user: req.session.user})
+});
 
   ...
 ```
@@ -395,24 +406,24 @@ server.js
   
   ...
   
-  app.post('/textsync/tokens', (req, res) => {
-    //Certain Users can be restricted to either READ or WRITE access on the document
-    //to keep this demo simple, all users are granted READ and WRITE access to the document
-    const permissionsFn = () => {
-      return Promise.resolve([
-        TextSync.Permissions.READ,
-        TextSync.Permissions.WRITE
-      ]);
-    };
+app.post('/textsync/tokens', (req, res) => {
+  //Certain Users can be restricted to either READ or WRITE access on the document
+  //to keep this demo simple, all users are granted READ and WRITE access to the document
+  const permissionsFn = () => {
+    return Promise.resolve([
+      TextSync.Permissions.READ,
+      TextSync.Permissions.WRITE
+    ]);
+  };
 
-    //Set authentication token to expire in 20 minutes
-    const options = { tokenExpiry: 60 * 20 };
+  //Set authentication token to expire in 20 minutes
+  const options = { tokenExpiry: 60 * 20 };
 
-    textSync.authorizeDocument(req.body, permissionsFn, options)
-      .then(token => {
-        res.json(token);
-      });
-  });
+  textSync.authorizeDocument(req.body, permissionsFn, options)
+    .then(token => {
+      res.json(token);
+    });
+});
 
   ...
 ```
@@ -438,9 +449,9 @@ similar to an instance, This will interface with our local application and enabl
 ```js
 variables.env
 
-  AUTH0_CLIENT_ID={YOUR CLIENT_ID}
-  AUTH0_DOMAIN={YOUR DOMAIN}
-  AUTH0_CLIENT_SECRET={YOUR CLIENT_SECRET}
+AUTH0_CLIENT_ID={YOUR CLIENT_ID}
+AUTH0_DOMAIN={YOUR DOMAIN}
+AUTH0_CLIENT_SECRET={YOUR CLIENT_SECRET}
 ```
 
 4. Click the "Save Changes" button.
@@ -458,46 +469,51 @@ Paste the code below and we'll go into the details after;
 server.js
   ...
 
-  // This middleware is required to initialize passport
-  app.use(passport.initialize());
-  
-  //We use sessions in our application so this middleware is required
-  app.use(passport.session());
+// This middleware is required to initialize passport
+app.use(passport.initialize());
 
-  //Serialize the User into the session
-  passport.serializeUser(function (user, done) {
-    done(null, user);
-  });
+//We use sessions in our application so this middleware is required
+app.use(passport.session());
 
-  passport.deserializeUser(function (user, done) {
-    done(null, user);
-  });
+//Serialize the User into the session
+passport.serializeUser( (user, done) => {
+  done(null, user);
+});
 
-  // Passport middleware that initializes the Auth0 strategy
-  passport.use(new Auth0Strategy({
-  domain: process.env.AUTH0_DOMAIN,
-  clientID: process.env.AUTH0_CLIENT_ID,
-  clientSecret: process.env.AUTH0_CLIENT_SECRET,
-  callbackURL: 'http://localhost:3000/callback'
+passport.deserializeUser( (user, done) => {
+  done(null, user);
+});
+
+// Passport middleware that initializes the Auth0 strategy
+passport.use(new Auth0Strategy({
+domain: process.env.AUTH0_DOMAIN,
+clientID: process.env.AUTH0_CLIENT_ID,
+clientSecret: process.env.AUTH0_CLIENT_SECRET,
+callbackURL: 'http://localhost:3000/callback'
 }, (accessToken, refreshToken, extraParams, profile, done) => {
-  // accessToken is useful if we're calling the Auth0 API(not needed in this article)
-  // profile contains the information of the user
-  return done(null, profile);
+// accessToken is useful if we're calling the Auth0 API(not needed in this article)
+// profile contains the information of the user
+return done(null, profile);
 }));
 
-  app.get('/login', passport.authenticate('auth0',{
-    //The scope parameter determines the user information the server sends
-    scope: "openid profile"
-  }) );
+app.get('/login', passport.authenticate('auth0',{
+  //The scope parameter determines the user information the server sends
+  scope: "openid profile"
+}) );
 
-  app.get('/callback', passport.authenticate('auth0'), (req, res) => {
-    req.session.user = req.user;
-    res.redirect('/')
-  });
+app.get('/callback', passport.authenticate('auth0'), (req, res) => {
+  req.session.user = req.user;
+  res.redirect('/')
+});
+
+//Listen to connections on port 3000
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server listening on port 3000.");
+});
 
 ```
 
-In order to use an authentication strategy, we must must first configure it, so let's configure the Auth0 strategy, we do that using the `passport.use()` function. The Auth0 strategy takes in a several required arguments and a verify callback function we'll use later.
+In order to use an authentication strategy, we must must first configure it. So let's configure the Auth0 strategy, we do that using the `passport.use()` function. The Auth0 strategy takes in a several required arguments and a verify callback function we'll use later.
 
 All users are authenticated through the `/login` route, when a user tries to log in they're immediately redirected to an Auth0 page to log in through one of the identity providers. 
 If that is successful, Auth0 will redirect the user to the callback route/URL(`http://localhost:3000/callback`) we provided when setting up the Auth0 strategy. This route contains middleware that triggers Passport to authenticate the request.
