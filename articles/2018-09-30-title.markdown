@@ -59,7 +59,7 @@ A popup should appear showing you some config values perculiar to your Firebase 
 With that covered let's setup Firestore, the client application makes use of Firestore Database for storing chat messages, so you'll need to create a new database in your Firebase console. Follow the steps below to create one:
 
 * In the Project overview page, click on the **Database** tab,
-* Then click on the **Create Database** button, select the **Start in public mode** option and create the database.
+* Then click on the **Create Database** button, select the **Start in test mode** option and create the database.
 
 ### Generating a Service Account Private Key
 Due to the fact that you're using the custom auth approach, you'll need to create a custom token which will be used to authenticate with Firebase. Now Firebase provides an **Admin SDK** that helps with creating this custom token. However, to gain access to the Admin SDK you'll have to create a **service account**, this **service account** will generate a JSON file containing a private key used in signing the custom token. Follow the steps below to generate this file:
