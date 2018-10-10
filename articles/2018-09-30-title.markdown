@@ -493,7 +493,7 @@ On the last line you do a simple check to see if this `loggedInThroughCallback` 
 ## Running the Application
 So that's all, let's go and test this out
 
-Open up your terminal in your project directory and set your project environmental variables. Replace the values below with your Auth0 application's `domain` and `audience` values. On a windows based system, you can set environmental variables using `set` in place of `export`
+Open up your terminal in your project directory and set your project environmental variables. Replace the values below with your Auth0 application's `domain` value. The `AUTH0_API_AUDIENCE` value should be replaced with your Auth0 applications `ClientID` . On a windows based system, you can set environmental variables using `set` in place of `export`.
 
 ```js
 export AUTH0_DOMAIN=YOUR_APP_DOMAIN
