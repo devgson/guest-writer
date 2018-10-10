@@ -41,7 +41,7 @@ It's important to note here that using Auth0 to secure Firebase services doesn't
 * You need to able to fully customize any stage of your authorization and authentication pipeline.
 * You want to support even more robust registration and login methods such as passwordless login.
 
-In summary, you should go for the custom auth approach if your application requires a more robust and complex authentication approach which is usually the case. Thankfully, Firebase provides a way of integrating other authentication solutions into their services, you'll go through it in detail in this article.
+In summary, you should go for the custom auth approach if your application requires a more robust and complex authentication method which is usually the case. Thankfully, Firebase provides a way of integrating other authentication solutions into their services, you'll go through it in detail in this article.
 
 ## Setting up Firebase
 In order to use Firebase you'll need a Firebase account, so go ahead and [sign up](https://firebase.google.com/) for a Firebase account. When you're done with that, the next thing you'll need to do is create a Firebase Project:
@@ -58,13 +58,13 @@ A popup should appear showing you some config values perculiar to your Firebase 
 
 With that covered let's setup Firestore, the client application makes use of Firestore Database for storing chat messages, so you'll need to create a new database in your Firebase console. Follow the steps below to create one:
 
-* In your [Firebase Console](https://console.firebase.google.com/), click on the **Database** tab,
-* Then click on the **Create Database** button, select the **Start in locked mode** option and create the database.
+* In the Project overview page, click on the **Database** tab,
+* Then click on the **Create Database** button, select the **Start in public mode** option and create the database.
 
 ### Generating a Service Account Private Key
 Due to the fact that you're using the custom auth approach, you'll need to create a custom token which will be used to authenticate with Firebase. Now Firebase provides an **Admin SDK** that helps with creating this custom token. However, to gain access to the Admin SDK you'll have to create a **service account**, this **service account** will generate a JSON file containing a private key used in signing the custom token. Follow the steps below to generate this file:
 
-* Head over to your [Firebase Console](https://console.firebase.google.com/), click on the little gear icon  besides `Project Overview` and then click on **Project Settings**, you'd be redirected to the project **settings** page, when that loads, navigate to the **Service Accounts** tab.
+* Once again, head over to your Project's overview page, click on the little gear icon  besides `Project Overview` and then click on **Project Settings**, you'd be redirected to the project **settings** page, when that loads, navigate to the **Service Accounts** tab.
 * Select the **Firebase Admin SDK** option, the default configuration snippet language is Node.js(which you'll be using). Click on the **Generate new private key** button, a JSON file should automatically start downloading, when it's done store the file somewhere on your system, you'll add it later to the project directory.
 
 > Note : The JSON file containing the private key is highly confidential and shouldn't be commited to any public repository.
@@ -72,9 +72,9 @@ Due to the fact that you're using the custom auth approach, you'll need to creat
 ## Setting Up Auth0
 You'll need an Auth0 account to setup authentication. If you don't have one, go ahead and [sign up](https://auth0.com/signup) for a free Auth0 account. When you're done creating the account, head over to your [dashboard](https://manage.auth0.com) and create a new Auth0 application, follow the steps below to create one:
 
-* Click on the **New Application** button and give your application a suitable name, set the application type to **Regular Web Application** and then click on the **Create** button.
-* You'd be redirected to the page of the newly created application, go the **Settings** tab of the application and copy the **Client ID**, **Client Secret** and **Domain** config values, you'll use them later on to initialize your Auth0 application on the client.
-* Lastly, there's an **Allowed Callback URL** field in your application settings, this field specifies a list of allowed URL's users can be redirected to after authentication. You'll want to redirect authenticated users to `localhost:3000/callback` so add that URL to the field.
+* Click on the **New Application** button and give your application a suitable name, set the application type to **Single Page Web Applications** and then click on the **Create** button.
+* You'd be redirected to the page menu of the newly created application, go the **Settings** tab of the application and copy the **Client ID**, **Client Secret** and **Domain** config values, you'll use them later on to initialize your Auth0 application on the client.
+* Lastly, there's an **Allowed Callback URL** field in your application settings, this field specifies a list of allowed URL's users can be redirected to after authentication. You'll want to redirect authenticated users to `http://localhost:3001/` so add that URL to the field and then click on `Save changes`.
 
 ## Scaffolding the Web Server
 Now that you're done setting up Auth0 and Firebase, the next thing you'll do is to create a directory for the application. Open up your terminal and run the following command:
@@ -83,7 +83,7 @@ Now that you're done setting up Auth0 and Firebase, the next thing you'll do is 
   mkdir firebase-custom-auth
 ```
 
-When that's done, run the following command in the terminal in the application directory:
+When that's done, navigate to that directory and then run the following command in the terminal:
 
 ```
   npm init
@@ -133,7 +133,7 @@ Now everything is set up, let's get to coding but just before that. In your proj
     algorithm: 'RS256'
   });
 
-  ...
+  //...
 ```
 
 In the code snippet above, you first of all import the previously installed packages, then `Express` is initialized and `cors` is setup as a middleware to respond to cross-origin requests, also the static assets are served. Then there's a bunch of stuff happening right below that, in summary this is what's going on:
@@ -149,7 +149,7 @@ You would have noticed that four configuration properties are used to configure 
 * `issuer`: This is a URI that uniquely identifies the party that issued the JWT, for an Auth0 issued ID Token, this should be the `domain` of your Auth0 application.
 * `algorithm`: This signifies the algorithm that was used to sign the JWT. `RS256` is used to sign the token here, it uses an assymetric algorithm meaning that a private key is used to sign the JWT and a public key is used to validate the signature. If you want to know more about this algorithm read this [article](https://auth0.com/blog/navigating-rs256-and-jwks/).
 
-Now create a new folder called `firebase` in the `src` directory, copy the JSON file created previously by your service account into this folder. To ensure that this JSON file isn't commited to your repostory, create a `.gitignore` file in the same `firebase` folder and add the name of the generated JSON file to it, it should be `firebase-key.json` by default:
+Now create a new folder called `firebase` in the `src` directory, copy the JSON file created previously by your service account into this folder. To ensure that this JSON file isn't commited to your repostory, create a `.gitignore` file in the same `firebase` folder and add the name of the generated JSON file to it, you can rename the file to `firebase-key.json` for readability:
 
 ```js
 // src/firebase/.gitignore
@@ -160,7 +160,7 @@ Alright, next you'll setup an Express route which uses the authentication middle
 
 ```js
 // src/server.js
-  ...
+  //...
 
   const serviceAccount = require('./firebase/firebase-key');
 
@@ -245,7 +245,7 @@ Nothing really fancy is going on above, you just setup some styling for the chat
 
 
 ### Configuring Auth0 on the Client
-Now you'll initialize  Auth0 on the client. Create a folder called `app` in the `public` directory and then create a file called `auth0.js` in the `app` folder . This is where you'll initialize and configure Auth0. Paste the code below into this file and we'll explore the contents right after:
+Now you'll initialize  Auth0 on the client. Create another folder called `app` in the `public` directory and then create a file called `auth0.js` in the `app` folder . This is where you'll initialize and configure Auth0. Paste the code below into this file and we'll explore the contents right after:
 
 ```js
 // /app/auth0.js
@@ -257,7 +257,7 @@ class Auth0Client {
   constructor() {
     _auth0Client = new auth0.WebAuth({
       domain: 'YOUR_APP_DOMAIN',
-      audience: 'YOUR_APP_AUDIENCE',
+      audience: 'https://YOUR_APP_DOMAIN/userinfo',
       clientID: 'YOUR_APP_CLIENTID',
       redirectUri: 'http://localhost:3001/',
       responseType: 'token id_token',
@@ -359,7 +359,7 @@ class Firebase {
   async signOut() {
     await firebase.auth().signOut();
   }
- ...
+ //...
 ```
 
 In like manner of the previous file, a class `Firebase` is created along with some useful methods. Firebase and Firestore are both initialized in the `constructor` function, make sure you replace the `apiKey`, `authDomain` and `projectId` config values with the equivalent values gotten from your Firebase project. Also, Firestore is initialized through Firebase, the result of that is stored in a variable which you'll use to interact with your Firestore database.
@@ -377,7 +377,7 @@ The `signOut` method logs the user out of Firebase while the `updateProfile` rec
 The code below contains the rest of the methods on the `firebaseClient` class, so add that to end of the `firebase.js` file and we'll go through it next:
 
 ```js
-...
+//...
  setAuthStateListener(listener) {
     firebase.auth().onAuthStateChanged(listener);
   }
@@ -435,7 +435,7 @@ async function setFirebaseCustomToken() {
   await firebaseClient.setToken(data.firebaseToken);
   await firebaseClient.updateProfile(auth0Client.getProfile());
 }
-...
+//...
 ```
 
 The first part of the code above is pretty straightforward, an event listener is set on the text input element and listens for input changes, when a user hits the enter key to send a message, the `addMessage` method is called with the message as an argument, an object is then created using this message, date and the user display name, this object is added as a document to the `messages` collection and is stored in the database. Similarly, an event listener is attached to the sign up button, when the user clicks this button, they are automatically redirected by Auth0 to sign in with their credentials.
@@ -445,7 +445,7 @@ Also, you might have noticed the `setFirebaseCustomToken` function, when this fu
 And finally, you'll make use of some methods created previously in `firebase.js` which listens for user messages and also state changes in the `auth` object, these methods will be used to update the UI accordingly on every message sent and every user log in or log out. Now copy the code below and paste into the `index.js` file:
 
 ```js
-...
+//...
 (async () => {
   firebaseClient.setAuthStateListener((user) => {
     if (!user) {
@@ -493,7 +493,7 @@ On the last line you do a simple check to see if this `loggedInThroughCallback` 
 ## Running the Application
 So that's all, let's go and test this out
 
-Open up your terminal in your project directory and set your project environmental variables. Replace the values below with your Auth0 application's `domain` and `audience` values.
+Open up your terminal in your project directory and set your project environmental variables. Replace the values below with your Auth0 application's `domain` and `audience` values. On a windows based system, you can set environmental variables using `set` in place of `export`
 
 ```js
 export AUTH0_DOMAIN=YOUR_APP_DOMAIN
@@ -503,10 +503,10 @@ export AUTH0_API_AUDIENCE=YOUR_APP_AUDIENCE
 When that's done, fire up your server by running the following command in your terminal:
 
 ```js
-npm start
+node src/server.js
 ```
 
-Now you can open `localhost:3000` to see the chat application, sign in and try it out.
+Now you can open `localhost:3001` to see the chat application, sign in and try it out.
 
 ## Conclusion
 In this article you learnt how to use Auth0 as a custom auth system to authenticate with Firebase services and in the process built a simple chat application which helped cement your knowledge of integrating both services into an application.
